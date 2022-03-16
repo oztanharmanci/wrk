@@ -143,7 +143,21 @@ int main(int argc, char **argv) {
     uint64_t bytes    = 0;
     errors errors     = { 0 };
 
-    sleep(cfg.duration);
+    uint64_t last_completed = 0;
+    uint64_t period_start = start;
+    for ( int d=0;d<cfg.duration && !stop;d++ ) {
+      sleep(1);
+      uint64_t total_completed = 0;
+      for (uint64_t i = 0; i < cfg.threads; i++) {
+        thread *t = &threads[i];
+        total_completed += t->complete;
+      }
+      uint64_t period_completed = total_completed - last_completed;
+      uint64_t now = time_us();
+      fprintf(stderr, "Req/Sec = %.1f\n", (double)period_completed * 1000000 / (double)(now - period_start));
+      period_start = now;
+      last_completed = total_completed;
+    }
     stop = 1;
 
     for (uint64_t i = 0; i < cfg.threads; i++) {
